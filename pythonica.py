@@ -1,6 +1,14 @@
 import mathlink as _ml
 import time as _time
 
+__author__="""\n""".join(['Benjamin Edwards (bedwards@cs.unm.edu)'])
+
+#    Copyright (C) 2012
+#    Benjamin Edwards
+#    All rights reserved.
+#    BSD license
+
+# Packets that signify incoming tokens
 _incoming_token = [_ml.RETURNPKT,
                    _ml.RETURNEXPRPKT,
                    _ml.DISPLAYPKT,
@@ -10,14 +18,18 @@ _incoming_token = [_ml.RETURNPKT,
                    _ml.SUSPENDPKT,
                    _ml.MESSAGEPKT]
 
+#identity function for anything to strings
 _id_to_mathematica = lambda x: str(x)
 
+#Convert a float to a string for mathematica
 def _float_to_mathematica(x):
     return ("%e"%x).replace('e','*10^')
 
+#Convert a complex to a string for mathematica
 def _complex_to_mathematica(z):
     return 'Complex' + ('[%e,%e]'%(z.real,z.imag)).replace('e','*10^')
 
+#convert some type of container to a string for matheatica
 def _iter_to_mathematica(xs):
     s = 'List['
     for x in xs:
@@ -27,9 +39,11 @@ def _iter_to_mathematica(xs):
     s+= ']'
     return s
 
+#Convert a string to a mathematica string
 def _str_to_mathematica(s):
     return '\"%s\"'%s
 
+#Dictionary for type conversions.
 _python_mathematica = {bool:_id_to_mathematica,
                        type(None):_id_to_mathematica,
                        int:_id_to_mathematica,
@@ -44,6 +58,9 @@ _python_mathematica = {bool:_id_to_mathematica,
                        tuple:_iter_to_mathematica,
                        frozenset:_iter_to_mathematica}
 
+#Take a string from mathematica and try to make it into a python object
+#This could likely be written better and in the future could include
+#methods for other functional conversions
 def _mathematica_str_python(s):
     if s == 'Null':
         return None
@@ -129,7 +146,7 @@ def _mathematica_str_python(s):
     else:
         return val
 
-
+#Searches Mathematica string of type 'InputForm' for things to plot
 def _find_plot_strings(s):
     ps = []
     for g_func in ['Graphics[','Graphics3D[','Image[','Grid[']:
@@ -150,10 +167,49 @@ def _find_plot_strings(s):
             s = s.replace(s[graph_start:i+1],'')
     return ps
 
+
+#Exception
 class PythonicaException(Exception):
     pass
 
 class Pythonica(object):
+    """
+    Base class for Mathematica Communication.
+
+    Creates a link to a Mathematica Kernel and stores information needed
+    communication
+
+    Parameters
+    ----------
+    name : string
+      String to launch mathlink.
+    mode : string
+      Sting for mode to launch mathlink
+    timeout : int
+      Time to give Mathematica to start the kernel
+    debug : Bool
+      Whether to print debug information
+    plot_dir : string
+      Directory to store plots
+    plot_size : tuple of 2 ints
+      Tuple containing plot size in pixels. If None let's Mathematica decide
+      what size to make things
+    plot_format : string
+      Format for plots, default to 'png'. 'bmp', 'svg', and 'jpeg' tested and
+      seem to work.
+    output_prompt : string
+      Whether to print output prompts reported from Mathematica
+    input_prompt : string
+      Whether to print input prompts reported from Mathematica
+
+    Examples
+    --------
+    >>> import pythonica
+    >>> m = pythonica.Pythonica()
+    >>> m.eval('Mean[{1,2,3}]')
+    '2'
+    """
+
 
     def __init__(self,
                  name='math -mathlink',
@@ -189,6 +245,52 @@ class Pythonica(object):
                 self.kernel.getstring()
 
     def eval(self,expression,make_plots=True,output_type='string',str_format='input'):
+        """
+        Evaluate a string in the Mathematica Kernel
+
+        Evalutes the string 'expression' in Mathematica.
+
+        Parameters
+        ----------
+        expression: string
+          Expression to be evaluated
+        make_plots: boolean
+          Whether to produce plots, plot_dir must not be None
+        output_type: string
+          Whether to output a string or a python object, must be either
+          'string' or 'pythong'
+        str_format: string
+          How to format the string if output_type='string'. If 'input' will
+          produce a string which can be used as Mathematica Input. If 'tex'
+          will produce valid tex. If 'plain' will produce whatever plain text
+          mathematica would produce.
+
+        Returns
+        -------
+        String or python object.
+
+        Raises
+        ------
+        PythonicaException
+
+        Examples
+        --------
+
+        >>> m.eval('D[Log[x],x]')
+        'x^(-1)'
+        >>> m.eval('Mean[{1,2,3,4}]',output_type='python')
+        2.5
+        >>> m.eval('D[Log[x],x]',str_output='tex')
+        '\\\\frac{1}{x}'
+        >>> print m.eval('D[Log[x],x]',str_output='plain')
+        1
+        -
+        x
+
+        See Also
+        --------
+        README.rst
+        """
         self.last_python_result=None
         self.last_str_result=None
         self.last_error=None
@@ -224,11 +326,44 @@ class Pythonica(object):
             return self.last_python_result
         elif output_type == 'string':
             self.last_python_result = None
-            return str_result
+            if str_result == 'Null':
+                return None
+            else:
+                return str_result
         else:
             raise PythonicaException("Output Type must be either 'python' or 'string'(default)")
 
     def push(self, name, value):
+        """
+        Push python object to Mathematica Kernel.
+
+        Can make some conversions of python objects to Mathematica. See
+        README.rst for more information.
+
+        Parameters
+        ----------
+        name : string
+          Name for value in Mathematica Kernel
+        value : python object
+          Object to be pushed to Mathematica Kernel
+
+        Returns
+        -------
+        None
+
+        Raises
+        ------
+        PythonicaException: If the object cannot be converted
+
+        Examples
+        --------
+
+        >>> m.push('l',[1,2,3])
+        >>> m.eval('l2 = 2*l;')
+        >>> m.pull('l2')
+        [2,4,6]
+        """
+
         convert_function = _python_mathematica.get(type(value),-1)
         if convert_function is -1:
             raise PythonicaException("Could not convert %s to Mathematica Object"%type(value))
@@ -236,6 +371,26 @@ class Pythonica(object):
         self.eval(s,make_plots=False)
 
     def pull(self,name):
+        """
+        Return a Mathematica Object to the python environment.
+
+        Parameters
+        ---------
+        name: string
+          Name to retrieve
+
+        Returns
+        -------
+        python object:
+          Depending on type will be converted. See README.rst for more info
+
+        Examples
+        --------
+
+        >>> m.eval('X = List[1,2,3,4]')
+        >>> m.pull('X')
+        [1,2,3,4]
+        """
         res = self.eval(name,make_plots=False)
         return _mathematica_str_python(res)
 
@@ -295,108 +450,3 @@ class Pythonica(object):
 
     def __del__(self):
         self.kernel.close()
-
-
-
-import os as _os
-
-if __name__ =="__main__":
-    m = Pythonica(plot_dir=_os.getcwd(),debug=False)
-    try:
-        m.eval("asl]]];dfkja")
-    except PythonicaException,e:
-        print(e)
-    print m.eval('Series[f[x],{x,0,6}]')
-    print m.eval('Series[f[x],{x,0,6}]',str_format='tex')
-    test = m.eval('Series[f[x],{x,0,6}]')
-    print m.eval(test)
-    
-    inputs = ['5',
-              'X=5/2',
-              'X',
-              '3+5I',
-              '{1,2,3,4}',
-              'D[Log[x],x]',
-              'GraphPlot[{1 -> 2, 1 -> 4, 2 -> 4, 3 -> 4, 3 -> 2, 3 ->5,5->1}, VertexLabeling -> True]', 
-              '{Plot[Sin[x],{x,0,10}],Plot[Cos[x],{x,0,10}]}',
-              'Plot3D[Sin[x y], {x, 0, 3}, {y, 0, 3}, ColorFunction->"Rainbow", Mesh -> None]',
-              'Unevaluated[Image[CellularAutomaton[30, {{1}, 0},40],\"Bit\"]]',
-              'Grid[{{a,b,c},{x,y^2,z^3}},Frame->All]']
-    print m.eval(inputs[5])
-    print m.eval(inputs[5],str_format='tex')
-
-    m.input_prompt=True
-    m.output_prompt=True
-
-    print m.eval(inputs[5])
-    print m.eval(inputs[5],str_format='tex')
-
-    m.input_prompt=False
-    m.output_prompt=False
-    
-    i = 1
-    for inp in inputs:
-        print('In[%i]= '%i + inp)
-        if i>6:
-            m.eval(inp)
-        else:
-            print m.eval(inp)
-        i+=1
-    
-    m.plot_size=(600,400)
-    m.eval(inputs[-3])
-    m.plot_size=(800,600)
-    m.eval(inputs[-3])
-    m.plot_size=None
-
-    m.plot_format='jpeg'
-    m.eval(inputs[-4])
-    m.plot_format='svg'
-    m.eval(inputs[-4])
-    m.plot_format='bmp'
-    m.eval(inputs[-4])
-    
-    m.push('x',5)
-    m.push('l',4L)
-    m.push('y',.5)
-    m.push('z',complex(3,4))
-    m.push('t',True)
-    m.push('f',False)
-    m.push('nan',None)
-    m.push('r',range(5))
-    m.push('L',[1,2,3])
-    m.push('s',set([1,2,3]))
-    m.push('xr',xrange(4))
-    m.push('st','hello')
-    m.push('fs',frozenset([1,2,3]))
-    m.push('ll',[1,2,'hello',[2,2,3],complex(3,4)])
-
-    print m.eval('x')
-    print m.eval('l')
-    print m.eval('y')
-    print m.eval('z')
-    print m.eval('t')
-    print m.eval('f')
-    print m.eval('nan')
-    print m.eval('r')
-    print m.eval('L')
-    print m.eval('s')
-    print m.eval('xr')
-    print m.eval('st')
-    print m.eval('fs')
-    print m.eval('ll')
-
-    print m.pull('x')
-    print m.pull('l')
-    print m.pull('y')
-    print m.pull('z')
-    print m.pull('t')
-    print m.pull('f')
-    print m.pull('nan')
-    print m.pull('r')
-    print m.pull('L')
-    print m.pull('s')
-    print m.pull('xr')
-    print m.pull('st')
-    print m.pull('fs')
-    print m.pull('ll')
