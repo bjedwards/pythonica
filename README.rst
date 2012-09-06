@@ -73,10 +73,10 @@ the result. It takes several options
   storage. For conversion to work the str_format must be 'input' See 
   *Pythonica.pull* for more info.
 * ``str_format`` - A string indicating the type of string to produce if
-  ``output_type`` is 'string'.
- * If 'input' will produce a string which is valid Mathematica Code, and can be fed back into ``eval``
- * If 'tex' will produce tex code.
- * If 'plain' will produce whatever mathematica would have produced. If you use ``print`` this usually looks ok.
+  ``output_type`` is 'string'. If 'input' will produce a string which is valid
+  Mathematica Code, and can be fed back into ``eval``, if 'tex' will produce tex 
+  code, or if 'plain' will produce whatever mathematica would have produced. If 
+  you use ``print`` this usually looks ok.
 
 
 
