@@ -62,7 +62,7 @@ _python_mathematica = {bool:_id_to_mathematica,
 #This could likely be written better and in the future could include
 #methods for other functional conversions
 def _mathematica_str_python(s):
-    if s == 'Null':
+    if s == 'Null' or s is None:
         return None
     try:
         val = int(s)
@@ -318,7 +318,7 @@ class Pythonica(object):
                     (w,h) = self.plot_size
                     self.eval('Export[%s,%s,ImageSize->{%i,%i}];'%(filename,s,w,h),make_plots=False,str_format='plain')
                 self.plot_num += 1
-        if str_format == 'plain':
+        if str_format == 'plain' and str_result is not None:
             str_result = str_result.decode('string_escape')
         self.last_str_result = str_result
         if output_type == 'python':
