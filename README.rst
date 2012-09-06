@@ -35,23 +35,23 @@ The workhorse of the module is the Pythonica class, this makes a link to the
 Mathematica kernel, and takes care of all the token, packet communication that
 goes on between mathlink and python. It can take several arguments.
 
-        * ``name`` - The name provided to mathlink to start the Kernel
-        * ``mode`` - The mode to launch the mathlink Kernel. In combination
-          with name you can start remote kernels, but I don't understand how
-          this works, so best to leave it be.
-        * ``timeout`` - Provides the time to wait after starting the Kernel
-          before it's usable. 1 second seems to overkill, adjust at will.
-        * ``debug`` - For debugging use, will printout tons of information if
-          you use it
-        * ``plot_dir`` - Where to store plots created by Mathematica. If set to
-          ``None``, no plots will be produces.
-        * ``plot_size`` - Tuple indicating the size in pixels for plots
-        * ``plot_format`` - string indicating file extension. If Mathematica
-          can use it, it should work.
-        * ``input_prompt`` - boolean indicating whether to print input prompts
-          from Mathematica
-        * ``output_prompt`` - boolean indicating whether to print output prompts
-          from Mathematica
+* ``name`` - The name provided to mathlink to start the Kernel
+* ``mode`` - The mode to launch the mathlink Kernel. In combination with name 
+  you can start remote kernels, but I don't understand howthis works, so best 
+  to leave it be.
+* ``timeout`` - Provides the time to wait after starting the Kernel
+  before it's usable. 1 second seems to overkill, adjust at will.
+* ``debug`` - For debugging use, will printout tons of information if
+  you use it.
+* ``plot_dir`` - Where to store plots created by Mathematica. If set to
+  ``None``, no plots will be produces.
+* ``plot_size`` - Tuple indicating the size in pixels for plots
+* ``plot_format`` - string indicating file extension. If Mathematica
+  can use it, it should work.
+* ``input_prompt`` - boolean indicating whether to print input prompts
+  from Mathematica
+* ``output_prompt`` - boolean indicating whether to print output prompts
+  from Mathematica
 
 All of the values from ``debug`` on can be set interactively, for example::
 
@@ -63,22 +63,24 @@ Pythonica.eval
 The eval function takes string to be processes as Mathematica input and returns
 the result. It takes several options
 
-        * ``expression`` - The expression to be evaluated. If it is malformed
-          it will throw a ``PythonicaException``.
-        * ``make_plots`` - A boolean indicating whether to make any plots
-          occuring from the function call.
-        * ``output_type`` - A string indicating the type of output to produce.
-          If the output type is 'string' it will produce a string. If the output
-          type is 'python' will attempt to convert the output to python for 
-          storage. For conversion to work the str_format must be 'input' See 
-          *Pythonica.pull* for more info.
-        * ``str_format`` - A string indicating the type of string to produce if
-          ``output_type`` is 'string'.
-          - If 'input' will produce a string which is valid Mathematica Code,
-            and can be fed back into ``eval``
-          - If 'tex' will produce tex code.
-          - If 'plain' will produce whatever mathematica would have produced.
-            If you use ``print`` this usually looks ok.
+* ``expression`` - The expression to be evaluated. If it is malformed
+  it will throw a ``PythonicaException``.
+* ``make_plots`` - A boolean indicating whether to make any plots
+  occuring from the function call.
+* ``output_type`` - A string indicating the type of output to produce.
+  If the output type is 'string' it will produce a string. If the output
+  type is 'python' will attempt to convert the output to python for 
+  storage. For conversion to work the str_format must be 'input' See 
+  *Pythonica.pull* for more info.
+* ``str_format`` - A string indicating the type of string to produce if
+  ``output_type`` is 'string'.
+    * If 'input' will produce a string which is valid Mathematica Code, and can be 
+      fed back into ``eval``
+    * If 'tex' will produce tex code.
+    * If 'plain' will produce whatever mathematica would have produced.
+      If you use ``print`` this usually looks ok.
+
+
 
 Examples
 --------
@@ -104,27 +106,27 @@ Pythonica.push
 This function attempts to push a python value to the Mathematica Kernel. It
 attempts to convert the value first then sends it.
 
-        * ``name`` - The name the value will have in the Mathematica Kernel
-        * ``value`` - The python value to be passed.
+* ``name`` - The name the value will have in the Mathematica Kernel
+* ``value`` - The python value to be passed.
 
 This currently works by just calling the Mathematica function ``Set``.
 Mathematica's type system is not as extensive as Python's here are how things
 are set.
 
-        * Python type -> Mathematica type
-        * ``bool`` -> ``Booleans``
-        * ``None`` -> ``Null``
-        * ``float`` -> ``Real``
-        * ``int`` -> ``Integer``
-        * ``long`` -> ``Integer``
-        * ``complex`` -> ``Complex``
-        * ``iter`` -> ``List``
-        * ``list`` -> ``List``
-        * ``set`` -> ``List``
-        * ``xrange`` -> ``List``
-        * ``str``-> ``String``
-        * ``tuple`` -> ``List``
-        * ``frozenset`` -> ``List``
+* Python type -> Mathematica type
+* ``bool`` -> ``Booleans``
+* ``None`` -> ``Null``
+* ``float`` -> ``Real``
+* ``int`` -> ``Integer``
+* ``long`` -> ``Integer``
+* ``complex`` -> ``Complex``
+* ``iter`` -> ``List``
+* ``list`` -> ``List``
+* ``set`` -> ``List``
+* ``xrange`` -> ``List``
+* ``str``-> ``String``
+* ``tuple`` -> ``List``
+* ``frozenset`` -> ``List``
 
 Note that there is currently no support for numpy arrays. This could be
 possible in the future given the current interface, but for large arrays would
@@ -140,8 +142,8 @@ converted.
 
 Examples
 --------
-
 ::
+
         >>> m.push('x',5)
         >>> m.eval('x')
         '5'
@@ -194,13 +196,13 @@ return from ``eval`` when ``output_type`` is 'python'. Since Mathematica
 returns expressions which are based on function calls we take those function
 calls and try to convert them. First the basics.
 
-        * Mathematica Type -> Python Type
-        * ``Integer`` -> ``int`` or ``long`` depending on size
-        * ``Rational`` or anything with '\' -> Attempts to go to ``float``
-        * ``Complex`` or anything with 'I' -> Attempts to go to ``complex``
-        * ``String`` -> str
-        * symbols -> str
-        * functions -> dict...
+* Mathematica Type -> Python Type
+* ``Integer`` -> ``int`` or ``long`` depending on size
+* ``Rational`` or anything with '\' -> Attempts to go to ``float``
+* ``Complex`` or anything with 'I' -> Attempts to go to ``complex``
+* ``String`` -> str
+* symbols -> str
+* functions -> dict...
 
 Let me explain the functions -> dict. If we can't convert the part of the
 expression into a python type, we make a dictionary with a single key, the
@@ -211,8 +213,8 @@ are some...
 
 Examples
 --------
-
 ::
+
         >>> m.eval('X = Unevaluated[D[Log[x],x]];')
         >>> m.pull('X')
         {'Hold': [{'D': [{'Log': ['q']}, 'q']}]}
@@ -237,7 +239,6 @@ more plots, and 'ext' is the extension provided by ``Pythonica.plot_format``.
 
 Examples
 --------
-
 ::
 
         >>> m.plot_dir = '.'
